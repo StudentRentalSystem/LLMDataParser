@@ -3,8 +3,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "com.studentrental"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -31,19 +31,19 @@ publishing {
     publications {
         create<MavenPublication>("gpr") {
             from(components["java"])
-            groupId = "org.example"
-            artifactId = "LLMDataParser"
-            version = "1.0-SNAPSHOT"
+            groupId = "com.studentrental"
+            artifactId = "llm-data-parser"
+            version = "1.0.0"
         }
     }
 
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/${project.findProperty("gpr.repo") ?: System.getenv("GITHUB_REPOSITORY")}")
+            url = uri("https://maven.pkg.github.com/StudentRentalSystem/LLMDataParser")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }

@@ -1,4 +1,4 @@
-package org.example;
+package com.studentrental;
 
 public class SearchResultItem {
     private final String content;

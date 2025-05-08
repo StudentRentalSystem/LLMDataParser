@@ -1,4 +1,4 @@
-package org.example;
+package com.studentrental;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.example.Settings.extractedDataPath;
+import static com.studentrental.Settings.extractedDataPath;
 
 public class HybridIndexer {
     private LuceneBM25Indexer indexer;

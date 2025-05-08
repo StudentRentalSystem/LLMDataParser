@@ -1,4 +1,4 @@
-package org.example;
+package com.studentrental;
 
 
 import org.json.JSONArray;
@@ -8,11 +8,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Scanner;
 
-import static org.example.Settings.*;
-import static org.example.Utils.getStringJSON;
+import static com.studentrental.Settings.*;
+import static com.studentrental.Utils.getStringJSON;
 
 
 public class MiniRagApp {

@@ -1,4 +1,4 @@
-package org.example;
+package com.studentrental;
 
 
 import java.io.*;
@@ -10,8 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static org.example.Settings.*;
-import static org.example.Utils.getStringJSON;
+import static com.studentrental.Settings.*;
+import static com.studentrental.Utils.getStringJSON;
 
 
 public class RentalExtractor {

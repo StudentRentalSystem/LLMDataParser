@@ -1,4 +1,4 @@
-package org.example;
+package com.studentrental;
 
 
 import io.milvus.client.MilvusServiceClient;

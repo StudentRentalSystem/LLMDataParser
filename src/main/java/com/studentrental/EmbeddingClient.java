@@ -1,9 +1,9 @@
-package org.example;
+package com.studentrental;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static org.example.Settings.nomic_embed_text;
+import static com.studentrental.Settings.nomic_embed_text;
 
 public class EmbeddingClient {
 
