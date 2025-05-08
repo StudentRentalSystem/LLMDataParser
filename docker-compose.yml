@@ -1,0 +1,20 @@
+version: '3.5'
+services:
+  milvus-standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.4.0
+    ports:
+      - "19530:19530" # Milvus gRPC port
+      - "9091:9091"   # Milvus HTTP RESTful API port
+    environment:
+      ETCD_USE_EMBED: "true"
+      MINIO_USE_EMBED: "true"
+      MILVUS_DEPLOY_MODE: "standalone"
+      MILVUS_LOG_LEVEL: "debug"
+    command: ["milvus", "run", "standalone"]
+    volumes:
+      - milvus-data:/var/lib/milvus
+    restart: always
+
+volumes:
+  milvus-data:
