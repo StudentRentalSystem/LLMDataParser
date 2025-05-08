@@ -28,6 +28,15 @@ tasks.test {
 
 publishing {
 
+    publications {
+        create<MavenPublication>("gpr") {
+            from(components["java"])
+            groupId = "org.example"
+            artifactId = "LLMDataParser"
+            version = "1.0-SNAPSHOT"
+        }
+    }
+
     repositories {
         maven {
             name = "GitHubPackages"
