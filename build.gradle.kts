@@ -31,7 +31,7 @@ publishing {
     publications {
         create<MavenPublication>("gpr") {
             from(components["java"])
-            groupId = "com.github.StudentRentalSystem"
+            groupId = "com.github.studentRentalSystem"
             artifactId = "LLMDataParser"
             version = "1.0.3"
         }
