@@ -55,5 +55,5 @@ jobs:
         run: ./gradlew publish
         env:
           USERNAME: "hding4915"
-          TOKEN: ${{ secrets.JAVA_TOKEN }}
+          TOKEN: "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"
 
