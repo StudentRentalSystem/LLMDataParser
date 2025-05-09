@@ -1,9 +1,9 @@
-package com.studentrental;
+package com.github.studentrental;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static com.studentrental.Settings.nomic_embed_text;
+import static com.github.studentrental.Settings.nomic_embed_text;
 
 public class EmbeddingClient {
 

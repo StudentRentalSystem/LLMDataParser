@@ -1,4 +1,4 @@
-package com.studentrental;
+package com.github.studentrental;
 
 import org.json.JSONException;
 import org.json.JSONObject;

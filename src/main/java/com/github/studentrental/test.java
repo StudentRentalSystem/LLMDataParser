@@ -1,4 +1,4 @@
-package com.studentrental;
+package com.github.studentrental;
 
 
 //class Building {}

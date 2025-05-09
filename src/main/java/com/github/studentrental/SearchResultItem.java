@@ -1,4 +1,4 @@
-package com.studentrental;
+package com.github.studentrental;
 
 public class SearchResultItem {
     private final String content;

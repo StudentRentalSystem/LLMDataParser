@@ -1,4 +1,4 @@
-package com.studentrental;
+package com.github.studentrental;
 
 
 import io.milvus.client.MilvusServiceClient;

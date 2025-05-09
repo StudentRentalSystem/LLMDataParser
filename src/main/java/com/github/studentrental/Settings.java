@@ -1,4 +1,4 @@
-package com.studentrental;
+package com.github.studentrental;
 
 public final class Settings {
     public static final String promptPath = "extract_prompt.txt";
