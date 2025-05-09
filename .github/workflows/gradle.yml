@@ -44,4 +44,13 @@ jobs:
       - name: Publish to GitHub Packages
         run: ./gradlew publish
         env:
-          TOKEN: ${{ secrets.JAVA_TOKEN }}
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print Actor and Token (for debugging)
+        run: |
+          echo "ACTOR=$MY_ACTOR"
+          echo "TOKEN=$MY_TOKEN"
+        env:
+          MY_ACTOR: ${{ secrets.GITHUB_ACTOR }}
+          MY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
