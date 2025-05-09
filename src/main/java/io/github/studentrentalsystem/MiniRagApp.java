@@ -1,4 +1,4 @@
-package com.github.studentrental;
+package io.github.studentrentalsystem;
 
 
 import org.json.JSONArray;
@@ -10,8 +10,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-import static com.github.studentrental.Settings.*;
-import static com.github.studentrental.Utils.getStringJSON;
+import static io.github.studentrentalsystem.Settings.*;
+import static io.github.studentrentalsystem.Utils.getStringJSON;
 
 
 public class MiniRagApp {

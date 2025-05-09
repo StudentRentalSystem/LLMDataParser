@@ -152,7 +152,7 @@ FacebookCrawlingDataFormatter/
 
 執行：
 ```bash
-java com.github.studentrental.HybridInserter
+java io.github.studentrentalsystem.HybridInserter
 ```
 或自定義執行腳本，將結構化資料轉向量並儲存
 

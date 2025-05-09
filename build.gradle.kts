@@ -3,7 +3,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.github.studentrental"
+group = "io.github.studentrentalsystem"
 version = "1.0.3"
 
 repositories {
@@ -31,8 +31,8 @@ publishing {
     publications {
         create<MavenPublication>("gpr") {
             from(components["java"])
-            groupId = "com.github.studentRentalSystem"
-            artifactId = "LLMDataParser"
+            groupId = "io.github.studentrentalsystem"
+            artifactId = "llmdataparser"
             version = "1.0.3"
         }
     }
