@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.studentrentalsystem"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -33,7 +33,7 @@ publishing {
             from(components["java"])
             groupId = "io.github.studentrentalsystem"
             artifactId = "llmdataparser"
-            version = "1.0.3"
+            version = "1.0.4"
         }
     }
 
