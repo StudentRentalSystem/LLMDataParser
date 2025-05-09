@@ -41,7 +41,7 @@ jobs:
       - name: Print Token (for debugging)
         run: echo "TOKEN=$MY_TOKEN"
         env:
-          MY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MY_TOKEN: ${{ secrets.JAVA_TOKEN }}
 
       - name: Give gradlew execute permission
         run: chmod +x ./gradlew
@@ -55,4 +55,4 @@ jobs:
         run: ./gradlew publish
         env:
           USERNAME: ${{ github.actor }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.JAVA_TOKEN }}
