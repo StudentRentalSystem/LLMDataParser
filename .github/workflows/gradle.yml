@@ -36,7 +36,7 @@ jobs:
       - name: Print Actor (for debugging)
         run: echo "ACTOR=$MY_ACTOR"
         env:
-          MY_ACTOR: ${{ github.actor }}
+          MY_ACTOR: ${{ secrets.JAVA_ACTOR }}
 
       - name: Print Token (for debugging)
         run: echo "TOKEN=$MY_TOKEN"
@@ -55,5 +55,5 @@ jobs:
         run: ./gradlew publish
         env:
           USERNAME: "hding4915"
-          TOKEN: "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"
+          TOKEN: ${{ secrets.JAVA_TOKEN }}
 
