@@ -43,7 +43,7 @@ publishing {
             url = uri("https://maven.pkg.github.com/StudentRentalSystem/LLMDataParser")
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GIT_PAT")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
