@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.studentrentalsystem"
-version = "1.0.1"
+version = "1.0.0"
 
 java {
     toolchain {
@@ -42,7 +42,7 @@ publishing {
             from(components["java"])
             groupId = "io.github.studentrentalsystem"
             artifactId = "llmdataparser"
-            version = "1.0.1"
+            version = "1.0.0"
         }
     }
 
