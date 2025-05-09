@@ -14,34 +14,26 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
+    env:
+      USERNAME: ${{ github.actor }}
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-          settings-path: ${{ github.workspace }} # location for the settings.xml file
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-
-      - name: Print Actor (for debugging)
-        run: echo "ACTOR=$MY_ACTOR"
-        env:
-          MY_ACTOR: ${{ secrets.JAVA_ACTOR }}
-
-      - name: Print Token (for debugging)
-        run: echo "TOKEN=$MY_TOKEN"
-        env:
-          MY_TOKEN: ${{ secrets.JAVA_TOKEN }}
 
       - name: Give gradlew execute permission
         run: chmod +x ./gradlew
@@ -53,8 +45,4 @@ jobs:
       # the publishing section of your build.gradle
       - name: Publish to GitHub Packages
         run: ./gradlew publish
-        env:
-          USERNAME: "hding4915"
-          TOKEN: ${{ secrets.JAVA_TOKEN }}
-          
 

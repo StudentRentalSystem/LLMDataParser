@@ -137,9 +137,9 @@ public class MiniRagApp {
         String response = "";
 
         try {
-            MilvusVectorStore.connect();
-
-            MilvusVectorStore.printCollectionCount();
+//            MilvusVectorStore.connect();
+//
+//            MilvusVectorStore.printCollectionCount();
 
             Scanner scanner = new Scanner(System.in);
 
@@ -174,7 +174,7 @@ public class MiniRagApp {
 
             }
 
-            MilvusVectorStore.close();
+//            MilvusVectorStore.close();
             System.out.println("👋 再見！");
         } catch (Exception e) {
             if (response != null) System.out.println(response);
