@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 
 
 public final class LLMClient {
-
     public static String callLocalModel(String prompt, String model, String model_url, boolean stream) {
         try {
             JSONObject requestBody = new JSONObject();
