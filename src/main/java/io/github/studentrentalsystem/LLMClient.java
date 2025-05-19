@@ -9,10 +9,24 @@ import java.nio.charset.StandardCharsets;
 
 
 public final class LLMClient {
-    public static String callLocalModel(String prompt, String model, String model_url, boolean stream) {
+    public enum ModelType {
+        LLAMA3_8B("llama3:8b"), MISTRAL("mistral"), NOMIC_EMBED_TEXT("nomic_embed_text");
+
+        private final String modelName;
+
+        ModelType(String modelName) {
+            this.modelName = modelName;
+        }
+
+        public String getModelName() {
+            return modelName;
+        }
+    }
+
+    public static String callLocalModel(String prompt, ModelType model, String model_url, boolean stream) {
         try {
             JSONObject requestBody = new JSONObject();
-            requestBody.put("model", model);
+            requestBody.put("model", model.getModelName());
             requestBody.put("prompt", prompt);
             requestBody.put("stream", stream);
 
@@ -57,7 +71,7 @@ public final class LLMClient {
         }
     }
 
-    public static String callLocalModel(String prompt, String model, String model_url) {
+    public static String callLocalModel(String prompt, ModelType model, String model_url) {
         return callLocalModel(prompt, model, model_url, false);
     }
 

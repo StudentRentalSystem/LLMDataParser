@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.studentrentalsystem"
-version = "1.0.1"
+version = "1.0-SNAPSHOT"
 
 java {
     toolchain {
@@ -36,7 +36,7 @@ publishing {
             from(components["java"])
             groupId = "io.github.studentrentalsystem"
             artifactId = "llmdataparser"
-            version = "1.0.1"
+            version = "1.0-SNAPSHOT"
         }
     }
 
@@ -45,8 +45,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/StudentRentalSystem/LLMDataParser")
             credentials {
-                username = System.getenv("USERNAME")
-                password = System.getenv("TOKEN")
+                username = System.getenv("PUBLISH_USERNAME")
+                password = System.getenv("PUBLISH_TOKEN")
             }
         }
     }

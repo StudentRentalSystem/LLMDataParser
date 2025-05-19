@@ -20,8 +20,8 @@ jobs:
       packages: write
 
     env:
-      USERNAME: ${{ github.actor }}
-      TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PUBLISH_USERNAME: ${{ github.actor }}
+      PUBLISH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
