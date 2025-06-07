@@ -70,9 +70,11 @@ public class RentalExtractor {
         BlockingQueue<LLMClient.StreamData> queue = new LinkedBlockingQueue<>();
 
         new Thread(() -> {
-            String dummyPrompt = "what is the ollama";
-            LLMClient.callLocalModel(dummyPrompt, LLMClient.ModelType.LLAMA3_8B, "http://localhost:11434/api/generate", true, queue);
+            String dummyPrompt = "what is the ollama model";
+//            LLMClient.callLocalModel(dummyPrompt, LLMClient.ModelType.LLAMA3_8B, "http://localhost:11434/api/chat", true, queue);
+            LLMClient.callLocalModel(dummyPrompt, LLMClient.ModelType.LLAMA3_8B, false,"http://localhost", 11434, true, queue);
         }).start();
+
 
         // Main thread to listen token
         new Thread(() -> {
@@ -88,8 +90,8 @@ public class RentalExtractor {
 
                     if (data.completed) {
                         System.out.println("\n✅ 回覆完成");
-                        System.out.println("完整回答為：\n" + contentSoFar);
-                        System.out.println("正確回答為:\n" + data.completeText);
+//                        System.out.println("完整回答為：\n" + contentSoFar);
+//                        System.out.println("正確回答為:\n" + data.completeText);
                         break;
                     }
                 } catch (InterruptedException e) {
