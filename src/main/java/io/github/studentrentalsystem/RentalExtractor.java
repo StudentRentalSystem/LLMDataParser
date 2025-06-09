@@ -25,27 +25,37 @@ import static io.github.studentrentalsystem.Utils.getStringJSON;
 public class RentalExtractor {
     private final int maxErrorTimes;
     private static String promptTemplate;
+    private final LLMClient llmClient;
+    private final LLMConfig llmConfig;
 
 
     /**
      * <p>
      * Default maxErrorTimes will be set to 5
+     * Default llmConfig will use the default value from {@link LLMConfig}
      * @throws IOException if it gets error when reading the prompt file
      */
     public RentalExtractor() throws IOException{
-        this(5);
+        this.maxErrorTimes = 5;
+        parseResData();
+        llmClient = new LLMClient();
+        llmConfig = new LLMConfig();
     }
 
 
     /**
      *
      * @param maxErrorTimes set the maxErrorTimes for parsing the rental posts
+     * @param llmConfig set the llm parameters
      * @throws IOException if it gets error when reading the prompt file
      */
-    public RentalExtractor(int maxErrorTimes) throws IOException{
+    public RentalExtractor(int maxErrorTimes, LLMConfig llmConfig) throws IOException{
         this.maxErrorTimes = maxErrorTimes;
         parseResData();
+        llmClient = new LLMClient(llmConfig);
+        this.llmConfig = llmConfig;
     }
+
 
     private void parseResData() throws IOException {
         InputStream in = RentalExtractor.class.getClassLoader().getResourceAsStream(promptPath);
@@ -65,40 +75,57 @@ public class RentalExtractor {
 //        String result = LLMClient.callLocalModel("what is the ollama", LLMClient.ModelType.LLAMA3_8B, "http://localhost:11434/api/generate",
 //                true);
 
+        LLMConfig llmConfig = new LLMConfig(false, "http://localhost", 11434, LLMConfig.ModelType.LLAMA3_8B, false, null);
+
+        RentalExtractor extractor;
+
+        try {
+            extractor = new RentalExtractor(5, llmConfig);
+            extractor.processPosts(rentalPostsPath, outputPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
 
 
-        BlockingQueue<LLMClient.StreamData> queue = new LinkedBlockingQueue<>();
-
-        new Thread(() -> {
-            String dummyPrompt = "what is the ollama model";
-//            LLMClient.callLocalModel(dummyPrompt, LLMClient.ModelType.LLAMA3_8B, "http://localhost:11434/api/chat", true, queue);
-            LLMClient.callLocalModel(dummyPrompt, LLMClient.ModelType.LLAMA3_8B, false,"http://localhost", 11434, true, queue);
-        }).start();
 
 
-        // Main thread to listen token
-        new Thread(() -> {
-            StringBuilder contentSoFar = new StringBuilder();
 
-            while (true) {
-                try {
-                    LLMClient.StreamData data = queue.take(); // blocking until the data exists
-                    if (data.token != null) {
-                        System.out.print(data.token);
-                        contentSoFar.append(data.token);
-                    }
-
-                    if (data.completed) {
-                        System.out.println("\n✅ 回覆完成");
-//                        System.out.println("完整回答為：\n" + contentSoFar);
-//                        System.out.println("正確回答為:\n" + data.completeText);
-                        break;
-                    }
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }).start();
+//        BlockingQueue<LLMClient.StreamData> queue = new LinkedBlockingQueue<>();
+//
+//        LLMConfig llmConfig1 = new LLMConfig(true, "http://localhost", 11434, LLMConfig.ModelType.MISTRAL, true, queue);
+//
+//        LLMClient llmClient = new LLMClient(llmConfig1);
+//
+//        new Thread(() -> {
+//            String dummyPrompt = "what is the ollama model";
+//            llmClient.callLocalModel(dummyPrompt);
+//        }).start();
+//
+//
+//        // Main thread to listen token
+//        new Thread(() -> {
+//            StringBuilder contentSoFar = new StringBuilder();
+//
+//            while (true) {
+//                try {
+//                    LLMClient.StreamData data = queue.take(); // blocking until the data exists
+//                    if (data.token != null) {
+//                        System.out.print(data.token);
+//                        contentSoFar.append(data.token);
+//                    }
+//
+//                    if (data.completed) {
+//                        System.out.println("\n✅ 回覆完成");
+////                        System.out.println("完整回答為：\n" + contentSoFar);
+////                        System.out.println("正確回答為:\n" + data.completeText);
+//                        break;
+//                    }
+//                } catch (InterruptedException e) {
+//                    break;
+//                }
+//            }
+//        }).start();
 
     }
 
@@ -106,19 +133,18 @@ public class RentalExtractor {
      * <p>
      * This function will call local LLM model to generate structural json data
      * @param post the rental post
-     * @param model the LLM model type to use
-     * @see LLMClient.ModelType
+     * @see LLMConfig.ModelType
      * @return type of {@link JSONObject} structural post
      */
-    public JSONObject getJSONPost(String post, LLMClient.ModelType model) throws JSONException{
-        String response = callLocalModel(post, model);
+    public JSONObject getJSONPost(String post) throws JSONException{
+        String response = callLocalModel(post);
         JSONObject jsonObject = getStringJSON(response);
         jsonObject.put("坪數", correctRentalSize(jsonObject.getJSONArray("坪數")));
         return jsonObject;
     }
 
-    private JSONObject noErrorJSONPost(String post, LLMClient.ModelType model) {
-        String response  = callLocalModel(post, model);
+    private JSONObject noErrorJSONPost(String post) {
+        String response  = callLocalModel(post);
         try {
             JSONObject jsonObject = getStringJSON(response);
             jsonObject.put("坪數", correctRentalSize(jsonObject.getJSONArray("坪數")));
@@ -190,14 +216,12 @@ public class RentalExtractor {
      * This function is used to parse single rental post to structural json data. <br>
      * When getting errors, it will parse again until the error times >= maxErrorTimes.
      * @param post single rental post string
-     * @param model the LLM model type to use
-     * @see LLMClient.ModelType
      * @return structural json post, type of {@link JSONObject}
      */
-    public JSONObject getJSONPostNoError(String post , LLMClient.ModelType model) {
+    public JSONObject getJSONPostNoError(String post) {
         JSONObject jsonPost;
         int errorTimes = 0;
-        while ((jsonPost = noErrorJSONPost(post, model)) == null && errorTimes < maxErrorTimes) {
+        while ((jsonPost = noErrorJSONPost(post)) == null && errorTimes < maxErrorTimes) {
             errorTimes++;
         }
         if (jsonPost != null) formSameJSON(jsonPost);
@@ -223,10 +247,8 @@ public class RentalExtractor {
      * This function is used to parse multiple rental posts to structural json data
      * @param inputPath input file path of the original rental posts, is a .json file that contains ["post1", "post2", ...]
      * @param outputPath output file path of the structural json data, is a .json file
-     * @param model the LLM model type to use
-     * @see LLMClient.ModelType
      */
-    public void processPosts(String inputPath, String outputPath, LLMClient.ModelType model) {
+    public void processPosts(String inputPath, String outputPath) {
         try {
             // Read all posts from input JSON file
             InputStream in = RentalExtractor.class.getClassLoader().getResourceAsStream(inputPath);
@@ -238,9 +260,7 @@ public class RentalExtractor {
                 String post = posts.getString(i);
                 System.out.println("⏳ 分析第 " + (i + 1) + " 筆貼文...");
 
-                JSONObject parsed = getJSONPostNoError(post, model);
-
-                formSameJSON(parsed);
+                JSONObject parsed = getJSONPostNoError(post);
 
                 results.add(parsed);
             }
@@ -259,15 +279,21 @@ public class RentalExtractor {
      * <p>
      * This function is used to get the LLM response when converting the rental post to structural json data.
      * @param text the rental post
-     * @param model the LLM model type to use
-     * @see LLMClient.ModelType
      * @return type of {@link String} response
      */
-    public String callLocalModel(String text, LLMClient.ModelType model) {
+    public String callLocalModel(String text) {
         String prompt = promptTemplate.replace("{text}", text);
 
-        String response = LLMClient.callLocalModel(prompt, model, "http://localhost:11434/api/generate");
+        String response = llmClient.callLocalModel(prompt);
         JSONObject jsonResponse = new JSONObject(response.toString());
-        return jsonResponse.getString("response");
+
+        if (llmConfig.chatMode) {
+            JSONObject message = jsonResponse.getJSONObject("message");
+            response = message.getString("content");
+        } else {
+            response = jsonResponse.getString("response");
+        }
+
+        return response;
     }
 }
