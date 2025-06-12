@@ -16,7 +16,8 @@ public class LLMConfig {
         MISTRAL("mistral"),
         NOMIC_EMBED_TEXT("nomic_embed_text"),
         LLAVA("llava"),
-        LLAVA_13B("llava:13b");
+        LLAVA_13B("llava:13b"),
+        DEEPSEEK_R1_32B("deepseek-r1:32b"),;
 
         private final String modelName;
 
