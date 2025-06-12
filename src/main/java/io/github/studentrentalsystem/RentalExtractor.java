@@ -62,33 +62,94 @@ public class RentalExtractor {
         promptTemplate = new String(in.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    public static void main(String[] args) {
-//        String test_post = "育樂街185號/透天    \n【 格  局 】：兩間雅房，2F-1，2F-2，共用衛浴，一樓為黑工嫩仙草，二樓為玄關及兩間雅房一衛浴\n             雅房，2F-1，5.5坪(限男生)\n             雅房，2F-2，3.5坪(限男生)\n【 地  址 】：台南市東區育樂街185號…… 查看更多\n兩間雅房出租\nNT$1  · 701006\n育樂街185號/透天\n【 格 局 】：兩間雅房，2F-1，2F-2，共用衛浴，一樓為黑工嫩仙草，二樓為玄關及兩間雅房一衛浴\n雅房，2F-1，5.5坪(限男生)\n雅房，2F-2，3.5坪(限男生)\n【 地 址 】：台南市東區育樂街185號\n台南一中正門附近，黑工嫩仙草樓上\n【 設 備 】：雅房、套房內附有無線數位電視、變頻冷氣、衣櫃、電腦桌、床、電視櫃、網路，玄關附有監視攝影機、磁卡門鎖、飲水機，頂樓曬衣場附有投幣式洗衣機、免投幣脫水機、手洗衣物台\n【 費 用 】：雅房，2F-1，3500元/月(限男生)\n雅房，2F-2，3000元/月(限男生)\n無管理費，包水，不包電，\n一度5元，免網路費\n一次繳清半年，垃圾需自行清理\n【 押 金 】：4000\n【限制性別】：男\n【目前住戶】：目前整棟住戶包含雅房、套房，共男生 7人\n【 限 制 】：不可開伙，不可養寵物，若有特別在意的可以詢問房東\n【聯絡方式】：0932895832 張太太或0972013922張文慶\n【聯絡時間】：正常上班時間聯絡即可\n【房東概述】：房東人很好，偶爾還會請大家喝飲料，約3星期偶爾會過來打掃公共區域， 如果有什麼東西壞掉需要修理找她也會馬上幫同學解決，\n【備註說明】：(1)無電梯。";
-//        try {
-//            RentalExtractor rentalExtractor = new RentalExtractor();
-////            System.out.println(rentalExtractor.getJSONPostNoError(test_post,
-////                    LLMClient.ModelType.LLAMA3_8B));
-//            rentalExtractor.processPosts(rentalPostsPath, outputPath, LLMClient.ModelType.LLAMA3_8B);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        String result = LLMClient.callLocalModel("what is the ollama", LLMClient.ModelType.LLAMA3_8B, "http://localhost:11434/api/generate",
-//                true);
+    public static void main(String[] args) throws IllegalAccessException {
+        String prompt = "請根據以下租屋需求文字，幫我轉換為 JSON 格式的 MongoDB 搜尋語句。請用繁體中文回答。\n" +
+                "❗重要規則：只有在輸入文字明確提到的資訊，才需要加入搜尋條件。不要亂填預設值或空物件。\n" +
+                "\n" +
+                "可使用的欄位如下：\n" +
+                "\n" +
+                "- \"地址\": 若使用者輸入的內容提及地址地名（如某某市、某某區、某某路、某某巷...等地名結構），請將地名依照層級拆解為多個區段（如台南市東區勝利路應拆為「台南」、「東區」、「勝利路」），並針對每個部分個別使用 $regex 查詢，並加上 \"$options\": \"i\" 做模糊比對，請用 \"$and\" 連結。每個地址區段請各自生成一筆查詢語句，不要用 \"地址.台南\"、\"地址.東區\" 去查詢，\n" +
+                "使用 {\"地址\": { \"$regex\": \"台南\", \"$options\": \"i\" }} 方式做查詢\n" +
+                "使用者輸入可能包含完整或簡略的地點名稱（例如「台南市」、「台南」），請將這些同義地名視為相同，並用最小單位（例如「台南」）進行 MongoDB 查詢。\n" +
+                "若有「勝利路」這種具體路名，請同時加入模糊匹配。\n" +
+                "若使用者沒有提及地址相關資訊，請不要加入匹配\n" +
+                "\n" +
+                "- \"租金\": 為單一物件，查詢方式如 {\"租金.minRental\":3000,\"租金.maxRental\":5000}。若提及租金區間，請用 \"租金.minRental\", \"租金.maxRental\" 對 minRental 與 maxRental 進行查詢，請不要用 \"$elemMatch\" 搜尋。\n" +
+                "若使用者要求一個大概的租金數值，像是: 我要租金大概在 5000 元，那麼請將 minRental, maxRental 設置為 5000 上下 1500 元\n" +
+                "若使用者表明他要特定範圍的租金，像是: 我要租金 3000 ~ 6000 元，那麼搜尋方式為 {\"租金.minRental\":3000,\"租金.maxRental\":6000}\n" +
+                "\n" +
+                "- \"坪數\": 格式為 float 陣列，若使用者提及坪數，用 \"$elemMatch\" 搜尋\n" +
+                "- \"格局\"：為物件包含 \"房\"、\"廳\"、\"衛\"，請使用 \"格局.房\"、\"格局.廳\"、\"格局.衛\" 方式進行比對。\n" +
+                "- \"性別限制\": 為物件包含 \"男\"、\"女\"，數值為 int，請使用 \"性別限制.男\"、\"性別限制.女\" 方式進行比對\n" +
+                "- \"是否可養寵物\"：為 int 數字格式 1 或是 0\n" +
+                "- \"是否可養魚\"：為 int 數字格式 1 或是 0\n" +
+                "- \"是否可開伙\"：為 int 數字格式 1 或是 0\n" +
+                "- \"是否有電梯\"：為 int 數字格式 1 或是 0\n" +
+                "- \"是否可租屋補助\": 為 int 數字格式 1 或是 0\n" +
+                "- \"是否有頂樓加蓋\": 為 int 數字格式 1 或是 0\n" +
+                "- \"是否有機車停車位\": 為 int 數字格式 1 或是 0\n" +
+                "- \"是否有汽車停車位\": 為 int 數字格式 1 或是 0\n" +
+                "\n" +
+                "若使用者輸入提及「套房」、「雅房」，請視為 {\"格局.房\": 1, \"格局.廳\": 0, \"格局.衛\": 0}，並分別寫出三個條件。\n" +
+                "\n" +
+                "範例輸入: 電梯套房\n" +
+                "範例輸出:\n" +
+                "{\n" +
+                "    \"$and\": [\n" +
+                "        { \"格局.房\": 1 },\n" +
+                "        { \"格局.廳\": 0 },\n" +
+                "        { \"格局.衛\": 0 },\n" +
+                "        { \"是否有電梯\": 1 }\n" +
+                "    ]\n" +
+                "}\n" +
+                "\n" +
+                "範例輸入: 我要租金在 3000 到 10000 元的房子\n" +
+                "範例輸出:\n" +
+                "{\n" +
+                "  \"租金.minRental\": { \"$gte\": 3000 },\n" +
+                "  \"租金.maxRental\": { \"$lte\": 10000 }\n" +
+                "}\n" +
+                "\n" +
+                "範例輸入: 我要租金大概在 5000 元\n" +
+                "範例輸出:\n" +
+                "{\n" +
+                "  \"租金.minRental\": { \"$gte\": 3500 },\n" +
+                "  \"租金.maxRental\": { \"$lte\": 6500 }\n" +
+                "}\n" +
+                "\n" +
+                "範例輸入: 我要男生女生都可以住的房子\n" +
+                "範例輸出:\n" +
+                "{\n" +
+                "  \"性別限制.男\": 1,\n" +
+                "  \"性別限制.女\": 1\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "input:{query}";
 
-        LLMConfig llmConfig = new LLMConfig(false, "http://localhost", 11434, LLMConfig.ModelType.LLAMA3_8B, false, null);
+        LLMConfig llmConfig = new LLMConfig(
+                LLMConfig.LLMMode.CHAT,
+                "http://140.116.110.134",
+                11434,
+                "deepseek-r1:14b",
+                false,
+                null
+        );
+        LLMClient llmClient = new LLMClient(llmConfig);
+        Scanner scanner = new Scanner(System.in);
 
-        RentalExtractor extractor;
+        System.out.println(ModelRegistry.getAllModels());
 
-        try {
-            extractor = new RentalExtractor(5, llmConfig);
-            extractor.processPosts(rentalPostsPath, outputPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
+        while (true) {
+            System.out.print("輸入: ");
+            String text = scanner.nextLine();
+
+            String response = llmClient.callLocalModel(prompt.replace("{query}", text));
+            System.out.println(response);
+            response = llmClient.getDetailMessage(response);
+            String output = response.replaceAll("(?s)<think>.*?</think>", "").trim();
+            System.out.println(getStringJSON(output));
         }
-
-
-
 
 
 //        BlockingQueue<LLMClient.StreamData> queue = new LinkedBlockingQueue<>();
@@ -133,7 +194,6 @@ public class RentalExtractor {
      * <p>
      * This function will call local LLM model to generate structural json data
      * @param post the rental post
-     * @see LLMConfig.ModelType
      * @return type of {@link JSONObject} structural post
      */
     public JSONObject getJSONPost(String post) throws JSONException{
