@@ -7,8 +7,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Function;
 
 
 /**
@@ -19,13 +21,19 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class LLMClient {
     private final LLMConfig config;
+    private final Map<LLMConfig.LLMMode, Function<JSONObject, ?>> responseRules;
 
-    public LLMClient(LLMConfig config) {
+    public LLMClient(LLMConfig config, Map<LLMConfig.LLMMode, Function<JSONObject, ?>> responseRules) {
         this.config = config;
+        this.responseRules = responseRules;
+    }
+    
+    public LLMClient(LLMConfig config) {
+        this(config, LLMAPIRules.getMixRules());
     }
 
     public LLMClient() {
-        this.config = new LLMConfig();
+        this(new LLMConfig(), LLMAPIRules.getMixRules());
     }
 
     public static class StreamData {
@@ -35,12 +43,12 @@ public class LLMClient {
     }
 
     private void configRequestUrl() {
-        String target = config.chatMode ? "chat" : "generate";
+        String target = config.mode.getMode();
         config.requestUrl = config.serverAddress + ":" + config.serverPort + "/api/" + target;
     }
 
-    public void setApiType(boolean chatMode) {
-        config.chatMode = chatMode;
+    public void setApiType(LLMConfig.LLMMode mode) {
+        config.mode = mode;
         configRequestUrl();
     }
 
@@ -54,7 +62,7 @@ public class LLMClient {
         configRequestUrl();
     }
 
-    public void setModelType(LLMConfig.ModelType modelType) {
+    public void setModelType(String modelType) {
         config.modelType = modelType;
     }
 
@@ -66,8 +74,8 @@ public class LLMClient {
         config.stream = stream;
     }
 
-    public String callLocalModel(String prompt, LLMConfig.ModelType model, boolean chatMode, String serverAddress, int serverPort, boolean stream, BlockingQueue<StreamData> queue) {
-        setApiType(chatMode);
+    public String callLocalModel(String prompt, String model, LLMConfig.LLMMode mode, String serverAddress, int serverPort, boolean stream, BlockingQueue<StreamData> queue) {
+        setApiType(mode);
         setServerAddress(serverAddress);
         setServerPort(serverPort);
         setModelType(model);
@@ -83,13 +91,13 @@ public class LLMClient {
 
     public String getDetailMessage(String llmResponse) {
         JSONObject jsonResponse = new JSONObject(llmResponse);
-        if (config.chatMode) {
-            JSONObject message = jsonResponse.getJSONObject("message");
-            llmResponse = message.getString("content");
-        } else {
-            llmResponse = jsonResponse.getString("response");
-        }
-        return llmResponse;
+        return (String) responseRules.get(config.mode).apply(jsonResponse);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Float> getEmbedMessage(String llmResponse) {
+        JSONObject jsonResponse = new JSONObject(llmResponse);
+        return (List<Float>) responseRules.get(config.mode).apply(jsonResponse);
     }
 
 
@@ -97,7 +105,7 @@ public class LLMClient {
      * <p>
      * This function is used to call ollama model.
      * @param prompt something you want the AI to answer
-     * @param model type of {@link LLMConfig.ModelType}, used to specify the model type
+     * @param model type of {@link String}, used to specify the model type
      * @param model_url the url of the running address. local server may use http://localhost:11434/api/generate
      * @param stream true if you want the AI to print the results sequentially
      * @param queue A thread-safe queue (typically a {@link java.util.concurrent.BlockingQueue}) that receives
@@ -105,15 +113,15 @@ public class LLMClient {
      *              token or the final completion status. If streaming is false, this parameter is ignored.
      * @return JSON String of ollama model response
      */
-    public String callLocalModel(String prompt, LLMConfig.ModelType model, String model_url, boolean stream, BlockingQueue<StreamData> queue) {
+    public String callLocalModel(String prompt, String model, String model_url, boolean stream, BlockingQueue<StreamData> queue) {
         try {
-            boolean chatMode = model_url.contains("/api/chat");
+            boolean mode = model_url.contains("/api/chat");
 
             JSONObject requestBody = new JSONObject();
-            requestBody.put("model", model.getModelName());
+            requestBody.put("model", model);
             requestBody.put("stream", stream);
 
-            if (!chatMode) {
+            if (!mode) {
                 requestBody.put("prompt", prompt);
             } else {
                 JSONArray jsonArray = new JSONArray();
@@ -124,8 +132,6 @@ public class LLMClient {
 
                 requestBody.put("messages", jsonArray);
             }
-
-
 
             URL url = new URL(model_url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -158,7 +164,7 @@ public class LLMClient {
                             break;
                         }
                         String token;
-                        if (chatMode) {
+                        if (mode) {
                             JSONObject message = responseBody.getJSONObject("message");
                             token = message.getString("content");
                         } else {
@@ -187,11 +193,11 @@ public class LLMClient {
      * <p>
      * This function is used to call ollama model with stream specified to false. <br>
      * @param prompt something you want the AI to answer
-     * @param model type of {@link LLMConfig.ModelType}, used to specify the model type
+     * @param model type of {@link String}, used to specify the model type
      * @param model_url the url of the running address. local server may use http://localhost:11434/api/generate
      * @return JSON String of ollama model response
      */
-    public String callLocalModel(String prompt, LLMConfig.ModelType model, String model_url) {
+    public String callLocalModel(String prompt, String model, String model_url) {
         return callLocalModel(prompt, model, model_url, false, null);
     }
 

@@ -3,42 +3,43 @@ package io.github.studentrentalsystem;
 import java.util.concurrent.BlockingQueue;
 
 public class LLMConfig {
-    public boolean chatMode = false;
+    public LLMMode mode = LLMMode.GENERATE;
     public String serverAddress = "http://localhost";
     public int serverPort = 11434;
-    public ModelType modelType = ModelType.LLAMA3_8B;
+    public String modelType = "llama3:8b";
     public boolean stream = false;
     public BlockingQueue<LLMClient.StreamData> queue = null;
     public String requestUrl = serverAddress + ":" + serverPort + "/api/generate";
 
-    public enum ModelType {
-        LLAMA3_8B("llama3:8b"),
-        MISTRAL("mistral"),
-        NOMIC_EMBED_TEXT("nomic_embed_text"),
-        LLAVA("llava"),
-        LLAVA_13B("llava:13b"),
-        DEEPSEEK_R1_32B("deepseek-r1:32b"),;
+    public enum LLMMode {
+        CHAT("chat"),
+        GENERATE("generate"),
+        EMBEDDINGS("embeddings");
 
-        private final String modelName;
+        private final String mode;
 
-        ModelType(String modelName) {
-            this.modelName = modelName;
+        LLMMode(String mode) {
+            this.mode = mode;
         }
 
-        public String getModelName() {
-            return modelName;
+        public String getMode() {
+            return mode;
         }
     }
 
-    public LLMConfig(boolean chatMode, String serverAddress, int serverPort, ModelType modelType, boolean stream, BlockingQueue<LLMClient.StreamData> queue) {
-        this.chatMode = chatMode;
+    public LLMConfig(LLMMode mode, String serverAddress, int serverPort, String modelType, boolean stream, BlockingQueue<LLMClient.StreamData> queue) throws IllegalAccessException {
+        this.mode = mode;
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
         this.modelType = modelType;
         this.stream = stream;
         this.queue = queue;
-        String target = chatMode ? "chat" : "generate";
+        String target = mode.getMode();
         requestUrl = serverAddress + ":" + serverPort + "/api/" + target;
+
+        if (!ModelRegistry.isAvailable(serverAddress, serverPort, modelType)) {
+            throw new IllegalAccessException(modelType + " does not exist in this machine!!!");
+        }
     }
 
     public LLMConfig() {
