@@ -20,7 +20,7 @@ import java.util.function.Function;
  * @author hding4915
  */
 public class LLMClient {
-    private final LLMConfig config;
+    private LLMConfig config;
     private final Map<LLMConfig.LLMMode, Function<JSONObject, ?>> responseRules;
 
     public LLMClient(LLMConfig config, Map<LLMConfig.LLMMode, Function<JSONObject, ?>> responseRules) {
@@ -29,11 +29,11 @@ public class LLMClient {
     }
     
     public LLMClient(LLMConfig config) {
-        this(config, LLMAPIRules.getMixRules());
+        this(config, LLMAPIRules.getReceiveRules());
     }
 
     public LLMClient() {
-        this(new LLMConfig(), LLMAPIRules.getMixRules());
+        this(new LLMConfig(), LLMAPIRules.getReceiveRules());
     }
 
     public static class StreamData {
@@ -74,21 +74,6 @@ public class LLMClient {
         config.stream = stream;
     }
 
-    public String callLocalModel(String prompt, String model, LLMConfig.LLMMode mode, String serverAddress, int serverPort, boolean stream, BlockingQueue<StreamData> queue) {
-        setApiType(mode);
-        setServerAddress(serverAddress);
-        setServerPort(serverPort);
-        setModelType(model);
-        setStream(stream);
-        setQueue(queue);
-        return callLocalModel(prompt, model, config.requestUrl, stream, queue);
-    }
-
-    public String callLocalModel(String prompt) {
-        return callLocalModel(prompt, config.modelType, config.requestUrl, config.stream, config.queue);
-    }
-
-
     public String getDetailMessage(String llmResponse) {
         JSONObject jsonResponse = new JSONObject(llmResponse);
         return (String) responseRules.get(config.mode).apply(jsonResponse);
@@ -100,30 +85,48 @@ public class LLMClient {
         return (List<Float>) responseRules.get(config.mode).apply(jsonResponse);
     }
 
+    /***
+     * <p>
+     * Set new llm config and override the original llm config
+     * @param config ollama model configuration
+     * @see LLMConfig
+     */
+    public void setLLMConfig(LLMConfig config) {
+        this.config = config;
+    }
+
+    /***
+     * <p>
+     * Call ollama model api with the settings in the {@link LLMConfig}
+     * @param prompt something you want the AI to answer
+     * @return JSON String of ollama model response
+     * Internal implementation: see private overloaded method for details.
+     */
+    public String callLocalModel(String prompt) {
+        return callLocalModel(prompt, config.mode, config.modelType, config.requestUrl, config.stream, config.queue);
+    }
+
 
     /**
      * <p>
      * This function is used to call ollama model.
      * @param prompt something you want the AI to answer
-     * @param model type of {@link String}, used to specify the model type
+     * @param mode {@link io.github.studentrentalsystem.LLMConfig.LLMMode} AI model mode
      * @param model_url the url of the running address. local server may use http://localhost:11434/api/generate
+     * @param model type of {@link String}, used to specify the model type
      * @param stream true if you want the AI to print the results sequentially
      * @param queue A thread-safe queue (typically a {@link java.util.concurrent.BlockingQueue}) that receives
      *              {@link StreamData} objects when streaming is enabled. Each object represents either a single
      *              token or the final completion status. If streaming is false, this parameter is ignored.
      * @return JSON String of ollama model response
      */
-    public String callLocalModel(String prompt, String model, String model_url, boolean stream, BlockingQueue<StreamData> queue) {
+    private String callLocalModel(String prompt, LLMConfig.LLMMode mode, String model_url, String model, boolean stream, BlockingQueue<StreamData> queue) {
         try {
-            boolean mode = model_url.contains("/api/chat");
-
             JSONObject requestBody = new JSONObject();
             requestBody.put("model", model);
             requestBody.put("stream", stream);
 
-            if (!mode) {
-                requestBody.put("prompt", prompt);
-            } else {
+            if (mode == LLMConfig.LLMMode.CHAT) {
                 JSONArray jsonArray = new JSONArray();
                 JSONObject oneRequest = new JSONObject();
                 oneRequest.put("role", "user");
@@ -131,6 +134,8 @@ public class LLMClient {
                 jsonArray.put(oneRequest);
 
                 requestBody.put("messages", jsonArray);
+            } else {
+                requestBody.put("prompt", prompt);
             }
 
             URL url = new URL(model_url);
@@ -163,15 +168,10 @@ public class LLMClient {
                             queue.put(doneData);
                             break;
                         }
-                        String token;
-                        if (mode) {
-                            JSONObject message = responseBody.getJSONObject("message");
-                            token = message.getString("content");
-                        } else {
-                            token = responseBody.getString("response");
-                        }
-                        allText.append(token);
 
+                        String token = getDetailMessage(line);
+
+                        allText.append(token);
 
                         StreamData tokenData = new StreamData();
                         tokenData.token = token;
@@ -188,17 +188,4 @@ public class LLMClient {
             return "";
         }
     }
-
-    /**
-     * <p>
-     * This function is used to call ollama model with stream specified to false. <br>
-     * @param prompt something you want the AI to answer
-     * @param model type of {@link String}, used to specify the model type
-     * @param model_url the url of the running address. local server may use http://localhost:11434/api/generate
-     * @return JSON String of ollama model response
-     */
-    public String callLocalModel(String prompt, String model, String model_url) {
-        return callLocalModel(prompt, model, model_url, false, null);
-    }
-
 }
